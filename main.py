@@ -107,6 +107,10 @@ with tab1:
             st.write(f"&emsp;&emsp;**Distance from Beam Center to Bottom Edge (cm):** {my_img.results_data().beam_center_to_bottom_mm / 10.0:.2f}")
             st.write(f"&emsp;&emsp;**Distance from Beam Center to Left Edge (cm):** {my_img.results_data().beam_center_to_left_mm / 10.0:.2f}")
             st.write(f"&emsp;&emsp;**Distance from Beam Center to Right Edge (cm):** {my_img.results_data().beam_center_to_right_mm / 10.0:.2f}")
+            st.write(f"&emsp;&emsp;**Distance from Central Axis to Top Edge (cm):** {my_img.results_data().cax_to_top_mm / 10.0:.2f}")
+            st.write(f"&emsp;&emsp;**Distance from Central Axis to Bottom Edge (cm):** {my_img.results_data().cax_to_bottom_mm / 10.0:.2f}")
+            st.write(f"&emsp;&emsp;**Distance from Central Axis to Left Edge (cm):** {my_img.results_data().cax_to_left_mm / 10.0:.2f}")
+            st.write(f"&emsp;&emsp;**Distance from Central Axis to Right Edge (cm):** {my_img.results_data().cax_to_right_mm / 10.0:.2f}")
             st.subheader("B. Flatness and Symmetry")
             st.write(f"&emsp;&emsp;**Horizontal Symmetry (%):** {my_img.results_data().protocol_results['symmetry_horizontal']:.2f}")
             st.write(f"&emsp;&emsp;**Vertical Symmetry (%):** {my_img.results_data().protocol_results['symmetry_vertical']:.2f}")
@@ -195,8 +199,16 @@ with tab2:
 # WLT Analysis Tab
 with tab3:
     st.header("WINSTON-LUTZ TEST")
+    
     st.image("appimages/wlt_img.png", caption="Winston-Lutz Analysis", width=500)  # Add corresponding image
-    st.session_state.wlt_location = st.file_uploader("Upload WLT DICOM Folder", type=["dcm"], accept_multiple_files=True, key="wlt_upload")
+
+    #Select the equipment
+    st.write("If using dicom files not acquired from Varian LINACS, ensure that dicom filename indicate acquisition settings")
+    machine_type = st.radio("Select the machine type:", ("Varian","Elekta"))
+
+
+    st.session_state.wlt_location = st.file_uploader("Upload WLT DICOM Folder", type=["dcm","zip"], accept_multiple_files=True, key="wlt_upload")
+    
     st.session_state.final_wlt_file_name = st.text_input("Enter WLT Output File Name", value="wlt_analysis.pdf", key="wlt_name")
     if st.button("WLT Analysis", key="wlt_button"):
         if st.session_state.wlt_location:
@@ -204,7 +216,12 @@ with tab3:
             for file in st.session_state.wlt_location:
                 with open(f"temp_wlt/{file.name}", "wb") as f:
                     f.write(file.getbuffer())
-            wlt = py.WinstonLutz("temp_wlt")
+            #Initialize WinstonLutz based on selected machine type
+
+            if machine_type=="Varian":
+                wlt = WinstonLutz("temp_wlt")
+            elif machine_type=="Elekta":
+                wlt = WinstonLutz("temp_wlt",use_filenames=True)
             wlt.analyze()
                 
             saved_images = []
@@ -268,7 +285,7 @@ with tab4:
     st.header("CatPhan CT/CBCT Analysis")
     st.image("appimages/catphan_logo.png", caption="CatPhan CT/CBCT Analysis", width=800)  # Add corresponding image
 
-    st.session_state.catphan_location = st.file_uploader("Upload CatPhan DICOM Folder", type=["dcm"], accept_multiple_files=True, key="catphan_upload")
+    st.session_state.catphan_location = st.file_uploader("Upload CatPhan DICOM Folder", type=["dcm","zip"], accept_multiple_files=True, key="catphan_upload")
     st.session_state.final_catphan_file_name = st.text_input("Enter CatPhan Output File Name", value="catphan_analysis.pdf", key="catphan_name")
 
     if st.button("CatPhan Analysis", key="catphan_button"):
